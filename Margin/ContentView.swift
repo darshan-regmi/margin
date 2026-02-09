@@ -12,75 +12,77 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
+        sortDescriptors: [NSSortDescriptor(keyPath: \Note.updatedAt, ascending: false)],
+        animation: .default
+    )
+    private var notes: FetchedResults<Note>
+
+    @State private var selectedNote: Note?
 
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+        NavigationSplitView {
+            List(selection: $selectedNote) {
+                ForEach(notes) { note in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(note.title ?? "Untitled")
+                            .font(.headline)
+                            .lineLimit(1)
+
+                        Text(note.content ?? "")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
                     }
+                    .padding(.vertical, 6)
+                    .tag(note)
                 }
-                .onDelete(perform: deleteItems)
+                .onDelete(perform: deleteNotes)
             }
+            .navigationTitle("Margin")
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: addNote) {
+                        Image(systemName: "square.and.pencil")
                     }
                 }
             }
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+        } detail: {
+            if let note = selectedNote {
+                NoteEditorView(note: note)
+            } else {
+                Text("Write something in the margin.")
+                    .foregroundStyle(.secondary)
+                    .font(.title3)
             }
         }
     }
 
-    private func deleteItems(offsets: IndexSet) {
+    private func addNote() {
         withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
+            let newNote = Note(context: viewContext)
+            newNote.id = UUID()
+            newNote.title = "Untitled"
+            newNote.content = ""
+            newNote.createdAt = Date()
+            newNote.updatedAt = Date()
 
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+            saveContext()
+            selectedNote = newNote
         }
     }
-}
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
+    private func deleteNotes(offsets: IndexSet) {
+        withAnimation {
+            offsets.map { notes[$0] }.forEach(viewContext.delete)
+            saveContext()
+        }
+    }
 
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+    private func saveContext() {
+        do {
+            try viewContext.save()
+        } catch {
+            print("Error saving context: \(error.localizedDescription)")
+        }
+    }
 }
