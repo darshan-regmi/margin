@@ -1,21 +1,28 @@
-//
-//  MarginApp.swift
-//  Margin
-//
-//  Created by Darshan Regmi on 09/02/2026.
-//
-
 import SwiftUI
-import CoreData
+import Firebase
 
 @main
 struct MarginApp: App {
-    let persistenceController = PersistenceController.shared
+    init() {
+        FirebaseApp.configure()
+        AuthService.shared.configure()
+    }
 
     var body: some Scene {
         WindowGroup {
+            RootView()
+        }
+    }
+}
+
+struct RootView: View {
+    @ObservedObject var auth = AuthService.shared
+    
+    var body: some View {
+        if auth.user == nil {
+            SignInView()
+        } else {
             ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
         }
     }
 }
