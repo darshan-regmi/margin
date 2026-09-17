@@ -39,22 +39,27 @@ final class NotesService {
 
     func createNote(completion: @escaping (Note) -> Void) {
         let ref = notesRef.document()
+
         let note = Note(
             id: ref.documentID,
-            title: "Untitled",
+            title: "",
             content: "",
             createdAt: Date(),
             updatedAt: Date()
         )
 
+        // Navigate immediately
+        DispatchQueue.main.async {
+            completion(note)
+        }
+
+        // Save to Firestore in the background
         ref.setData([
             "title": note.title,
             "content": note.content,
             "createdAt": Timestamp(date: note.createdAt),
             "updatedAt": Timestamp(date: note.updatedAt)
-        ]) { _ in
-            DispatchQueue.main.async { completion(note) }
-        }
+        ])
     }
 
     func updateNote(_ note: Note) {

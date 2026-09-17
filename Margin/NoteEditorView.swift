@@ -11,13 +11,13 @@ struct NoteEditorView: View {
         VStack(spacing: 0) {
             TextField("Title", text: $note.title)
                 .font(.title2)
+                .bold()
                 .padding()
                 .textFieldStyle(.plain)
                 .focused($isFocused)
                 .onChange(of: note.title) { debouncedSave() }
-
-            Divider()
-
+            
+            
             if preview {
                 MarkdownView(text: note.content)
                     .padding()
@@ -35,14 +35,27 @@ struct NoteEditorView: View {
                 } label: {
                     Image(systemName: preview ? "pencil" : "eye")
                 }
+                .buttonStyle(.plain)
             }
         }
         .onChange(of: isFocused) {
             if !isFocused { save() }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear {
+            let isTitleEmpty = note.title
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
+            
+            let isContentEmpty = note.content
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
+            
+            if isTitleEmpty && isContentEmpty {
+                NotesService.shared.deleteNote(id: note.id)
+            }
+        }
     }
-
     private func debouncedSave() {
         debouncer.debounce { save() }
     }

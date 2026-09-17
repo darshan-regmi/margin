@@ -35,7 +35,7 @@ struct ContentView: View {
                             )
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
-                            .lineLimit(3)
+                            .lineLimit(1)
                         }
                         .padding(.vertical, 6)
                     }
@@ -53,6 +53,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "square.and.pencil")
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .onAppear {
@@ -75,7 +76,7 @@ struct ContentView: View {
         let lowercasedContent = content.lowercased()
         let lowercasedSearch = searchText.lowercased()
         
-        guard let range = lowercasedContent.range(of: lowercasedSearch) else {
+        guard lowercasedContent.range(of: lowercasedSearch) != nil else {
             return content
         }
         
